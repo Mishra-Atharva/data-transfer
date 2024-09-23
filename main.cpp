@@ -7,6 +7,7 @@ int main()
     //initializing variables
     libusb_context *context = nullptr;
     libusb_init_option options;
+    libusb_config_descriptor *config;
     libusb_device **list = nullptr;
     libusb_device_handle *device_handle = nullptr;
 
@@ -18,8 +19,8 @@ int main()
     int result;
 
     // INITIALIZE
-    //result = libusb_init_context(&context, (libusb_init_option*)&options, num_options);
-    result = libusb_init(&context);
+    result = libusb_init_context(&context, (libusb_init_option*)&options, num_options);
+    //result = libusb_init(&context);
 
     if (result < 0)
     {
@@ -77,7 +78,7 @@ int main()
                 std::cerr << "[!] - Failed to open the deivce... " << libusb_error_name(result) << std::endl;
             }
 
-            result = libusb_set_configuration(device_handle, 0);
+            result = libusb_set_configuration(device_handle, -1);
             
             if (result < 0) 
             {
@@ -85,10 +86,14 @@ int main()
             }
 
 
-            const libusb_config_descriptor *config_desc;
-            result = libusb_get_active_config_descriptor(device, (libusb_config_descriptor*)&config_desc);
-            if (result == 0) {
-                std::cout << "Current configuration index: " << (int)config_desc->bConfigurationValue << std::endl;
+            result = libusb_get_active_config_descriptor(device, &config);
+            if (result < 0)
+            {
+                std::cerr << "[!] Error: " << libusb_error_name(result) << std::endl;
+            }
+            else 
+            {
+                std::cout << "Current configuration index: " << (int)config->bConfigurationValue << std::endl;
             }
             
             //result = libusb_set_configuration(device_handle, configuration);
@@ -98,12 +103,20 @@ int main()
             {
                 std::cerr << "[!] - Failed to set configuration... " << libusb_error_name(result) << std::endl;
             }
+            else 
+            {
+                std::cout << "[*] - Enabled" << std::endl;
+            }
 
             result = libusb_claim_interface(device_handle, interface);
 
             if (result < 0)
             {
                 std::cerr << "[!] - Failed ... " << libusb_error_name(result) << std::endl;
+            }
+            else 
+            {
+                std::cout << "[*] - Claim was successful!" << std::endl;
             }
 
             libusb_release_interface(device_handle, interface);
